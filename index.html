@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Buku Kas App</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0ea5a4">
+<link rel="icon" href="logo baru.png" type="image/png">
+<style>
+:root{
+  --bg:#f3f4f6; --card:#ffffff; --text:#0f172a; --muted:#64748b; --accent:#0ea5a4;
+  --green:#16a34a; --red:#dc2626; --green-light:#d1fae5; --red-light:#fee2e2; --hover:#e2e8f0;
+}
+[data-theme="dark"]{
+  --bg:#0b1220; --card:#071226; --text:#e6eef6; --muted:#9fb0c8; --accent:#34d399;
+  --green:#4ade80; --red:#f87171; --green-light:#164e3d; --red-light:#7f1d1d; --hover:#1c2540;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,system-ui; background:var(--bg); color:var(--text); padding:16px; display:flex; flex-direction:column; min-height:100vh;}
+.container{max-width:960px;margin:0 auto; flex:1; display:flex; flex-direction:column;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+header div.logo-title{display:flex;align-items:center;gap:8px;}
+header div.logo-title img{width:36px;height:36px;border-radius:6px;}
+h1{font-size:20px;margin-bottom:8px;}
+.controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.card{background:var(--card); border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(2,6,23,0.06); flex-shrink:0;}
+form{display:grid;grid-template-columns:1fr 120px 120px 150px 100px;gap:8px;align-items:end;}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+input, select{width:100%;padding:6px;border-radius:6px;border:1px solid #e6eef8;background:transparent;font-size:14px;color:var(--text);}
+input:focus, select:focus{border-color:var(--accent);outline:none;}
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+button{padding:8px 10px;border-radius:6px;border:0;background:var(--accent);color:white;cursor:pointer;transition:background 0.2s;font-size:14px;}
+button:hover{background:#0b9fa4;}
+.btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06); color:var(--text);}
+.summary{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.summary .pill{flex:1;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.5),transparent);text-align:center;}
+.pill small{display:block;color:var(--muted);font-size:11px}
+.pill strong{display:block;font-size:16px;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(0,0,0,0.06);}
+th{color:var(--muted)}
+tr:hover{background-color:var(--hover);}
+.type-in{color:var(--green);font-weight:600}
+.type-out{color:var(--red);font-weight:600}
+.row-in{background-color:var(--green-light);}
+.row-out{background-color:var(--red-light);}
+.actions button{margin-right:4px;padding:4px 6px;font-size:12px}
+.right{display:flex;gap:6px;align-items:center;margin-top:4px;}
+footer{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
+
+/* Responsive Mobile */
+@media (max-width:760px){
+  form{grid-template-columns:1fr; gap:8px;}
+  .right{flex-direction:column;align-items:stretch;}
+  table, th, td{font-size:12px;}
+  .summary .pill{font-size:12px;}
+  button{font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="logo-title">
+    <img src="logo baru.png" alt="Logo Buku Kas App">
+    <h1>Buku Kas App</h1>
+  </div>
+  <div class="controls">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+      <input id="darkToggle" type="checkbox" /> Dark
+    </label>
+    <button id="exportExcelBtn" class="btn-ghost">Excel</button>
+    <button id="exportPdfBtn" class="btn-ghost">PDF</button>
+    <button id="clearBtn" class="btn-ghost">Clear</button>
+  </div>
+</header>
+
+<div class="card">
+<form id="txForm">
+  <div><label for="desc">Keterangan</label><input id="desc" type="text" placeholder="Contoh: Penjualan, Gaji..." /></div>
+  <div><label for="type">Tipe</label><select id="type"><option value="in">Masuk</option><option value="out">Keluar</option></select></div>
+  <div><label for="amount">Jumlah (Rp)</label><input id="amount" type="number" step="1" min="0" placeholder="0" /></div>
+  <div><label for="datetime">Tanggal & Waktu</label><input id="datetime" type="datetime-local" /></div>
+  <div class="right"><button type="submit">Tambah</button><button id="updateBtn" type="button" style="display:none" class="btn-ghost">Simpan</button></div>
+</form>
+
+<div style="margin-top:10px;">
+<label>Filter Tanggal: </label>
+<input type="date" id="fromDate"> - <input type="date" id="toDate"> <button id="applyFilter" class="btn-ghost">Terapkan</button>
+</div>
+
+<div class="summary">
+<div class="pill"><small>Total Masuk</small><strong id="totalIn">Rp 0</strong></div>
+<div class="pill"><small>Total Keluar</small><strong id="totalOut">Rp 0</strong></div>
+<div class="pill"><small>Saldo</small><strong id="balance">Rp 0</strong></div>
+</div>
+
+<table id="txTable" aria-live="polite">
+<thead>
+<tr><th>#</th><th>Keterangan</th><th>Tipe</th><th>Jumlah</th><th>Tanggal</th><th>Aksi</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<footer>
+Tersimpan di browser. Gunakan Excel / PDF untuk backup.
+</footer>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script>
+// ===== JS versi mobile + PDF/Excel =====
+const fmtRp=n=>isNaN(n)?"Rp 0":"Rp "+Number(n).toLocaleString('id-ID');
+const descI=document.getElementById('desc'), typeI=document.getElementById('type'), amountI=document.getElementById('amount'), dtI=document.getElementById('datetime');
+const txForm=document.getElementById('txForm'), tbody=document.querySelector('#txTable tbody');
+const totalInEl=document.getElementById('totalIn'), totalOutEl=document.getElementById('totalOut'), balanceEl=document.getElementById('balance');
+const exportExcelBtn=document.getElementById('exportExcelBtn'), exportPdfBtn=document.getElementById('exportPdfBtn'), clearBtn=document.getElementById('clearBtn');
+const darkToggle=document.getElementById('darkToggle'), updateBtn=document.getElementById('updateBtn');
+const fromDate=document.getElementById('fromDate'), toDate=document.getElementById('toDate'), applyFilter=document.getElementById('applyFilter');
+
+const KEY='buku_kas_entries_v1'; let entries=[], editId=null;
+
+function setNowDatetimeLocal(input){ const now=new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset()); input.value=now.toISOString().slice(0,16);}
+setNowDatetimeLocal(dtI);
+
+function load(){ try{ const raw=localStorage.getItem(KEY); entries=raw?JSON.parse(raw):[];}catch(e){entries=[];} render();}
+function save(){ localStorage.setItem(KEY,JSON.stringify(entries)); render(); }
+
+function filterEntries(){
+  let filtered = [...entries];
+  if(fromDate.value) filtered = filtered.filter(e=>new Date(e.datetime)>=new Date(fromDate.value));
+  if(toDate.value) filtered = filtered.filter(e=>new Date(e.datetime)<=new Date(toDate.value+"T23:59:59"));
+  return filtered;
+}
+
+function render(){
+  tbody.innerHTML=''; let totalIn=0,totalOut=0;
+  filterEntries().slice().reverse().forEach((tx,idx)=>{
+    const tr=document.createElement('tr'); tr.className=tx.type==='in'?'row-in':'row-out';
+    tr.innerHTML=`<td>${filterEntries().length-idx}</td>
+      <td>${tx.desc||'-'}</td>
+      <td class="${tx.type==='in'?'type-in':'type-out'}">${tx.type==='in'?'Masuk':'Keluar'}</td>
+      <td>${fmtRp(tx.amount)}</td>
+      <td>${new Date(tx.datetime).toLocaleString('id-ID')}</td>
+      <td class="actions"><button class="btn-ghost">Edit</button><button class="btn-ghost">Hapus</button></td>`;
+    const [editBtn, delBtn]=tr.querySelectorAll('button');
+    editBtn.onclick=()=>startEdit(tx.id);
+    delBtn.onclick=()=>{ if(confirm('Hapus transaksi ini?')){ entries=entries.filter(e=>e.id!==tx.id); save(); } };
+    tbody.appendChild(tr); tr.style.opacity=0; setTimeout(()=>tr.style.opacity=1,50);
+    if(tx.type==='in') totalIn+=tx.amount; else totalOut+=tx.amount;
+  });
+  totalInEl.textContent=fmtRp(totalIn); totalOutEl.textContent=fmtRp(totalOut); balanceEl.textContent=fmtRp(totalIn-totalOut);
+}
+
+txForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const desc=descI.value.trim(), type=typeI.value, amount=Number(amountI.value||0);
+  const datetime=dtI.value?new Date(dtI.value).toISOString():new Date().toISOString();
+  if(!amount||amount<=0){ alert('Jumlah >0'); return;}
+  entries.push({id:Date.now().toString(36), desc, type, amount, datetime}); save();
+  descI.value=''; amountI.value=''; setNowDatetimeLocal(dtI);
+});
+
+function startEdit(id){
+  const tx=entries.find(t=>t.id===id); if(!tx)return;
+  editId=id; descI.value=tx.desc; typeI.value=tx.type; amountI.value=tx.amount;
+  const d=new Date(tx.datetime); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); dtI.value=d.toISOString().slice(0,16);
+  updateBtn.style.display='inline-block'; window.scrollTo({top:0,behavior:'smooth'});
+}
+
+updateBtn.addEventListener('click',()=>{
+  if(!editId)return; const tx=entries.find(t=>t.id===editId); if(!tx)return;
+  const amount=Number(amountI.value||0); if(!amount||amount<=0){ alert('Jumlah >0'); return;}
+  tx.desc=descI.value.trim(); tx.type=typeI.value; tx.amount=amount;
+  tx.datetime=dtI.value?new Date(dtI.value).toISOString():new Date().toISOString();
+  editId=null; updateBtn.style.display='none'; descI.value=''; amountI.value=''; setNowDatetimeLocal(dtI); save();
+});
+
+exportExcelBtn.addEventListener('click',()=>{
+  const filtered = filterEntries();
+  if(!filtered.length){ alert('Tidak ada data'); return;}
+  const ws_data=[["ID","Keterangan","Tipe","Jumlah","Tanggal"]];
+  filtered.forEach(e=>ws_data.push([e.id,e.desc,e.type==='in'?'Masuk':'Keluar',e.amount,new Date(e.datetime).toLocaleString('id-ID')]));
+  const ws=XLSX.utils.aoa_to_sheet(ws_data), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"BukuKas"); XLSX.writeFile(wb,"buku_kas.xlsx");
+});
+
+exportPdfBtn.addEventListener('click',()=>{
+  const filtered = filterEntries();
+  if(!filtered.length){ alert('Tidak ada data'); return;}
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p','pt','a4');
+  doc.setFontSize(16); doc.text("Buku Kas",40,40);
+
+  let filterText='';
+  if(fromDate.value) filterText += `Dari: ${fromDate.value} `;
+  if(toDate.value) filterText += `Sampai: ${toDate.value}`;
+  if(filterText){ doc.setFontSize(12); doc.text(filterText,40,60); }
+
+  let totalIn=0,totalOut=0;
+  filtered.forEach(tx=>{ if(tx.type==='in') totalIn+=tx.amount; else totalOut+=tx.amount; });
+  const balance=totalIn-totalOut;
+
+  const startY = filterText ? 70 : 50;
+  const boxWidth = 140, boxHeight = 28, gap=8;
+  doc.setFillColor(212,250,229); doc.rect(40,startY,boxWidth,boxHeight,'F');
+  doc.setFillColor(254,226,226); doc.rect(40+boxWidth+gap,startY,boxWidth,boxHeight,'F');
+  doc.setFillColor(220,220,220); doc.rect(40+2*(boxWidth+gap),startY,boxWidth,boxHeight,'F');
+  doc.setFontSize(12); doc.setTextColor(0);
+  doc.text(`Total Masuk: ${fmtRp(totalIn)}`,45,startY+20);
+  doc.text(`Total Keluar: ${fmtRp(totalOut)}`,45+boxWidth+gap,startY+20);
+  doc.text(`Saldo: ${fmtRp(balance)}`,45+2*(boxWidth+gap),startY+20);
+
+  const head=[["#","Keterangan","Tipe","Jumlah","Tanggal"]];
+  const body=filtered.map((e,i)=>[i+1,e.desc,e.type==='in'?'Masuk':'Keluar',fmtRp(e.amount),new Date(e.datetime).toLocaleString('id-ID'),e.type]);
+  doc.autoTable({
+    head, body, startY: startY+boxHeight+20,
+    styles:{ fontSize:10, cellPadding:4 },
+    headStyles:{ fillColor:[54,162,235], textColor:255 },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    columnStyles:{0:{cellWidth:25},1:{cellWidth:140},2:{cellWidth:50},3:{cellWidth:70},4:{cellWidth:110}},
+    didParseCell: function(data){
+      if(data.section==='body' && data.column.index!==5){
+        const type=body[data.row.index][5];
+        if(type==='in') data.cell.styles.fillColor=[212,250,229];
+        else if(type==='out') data.cell.styles.fillColor=[254,226,226];
+      }
+    }
+  });
+  window.open(doc.output('bloburl'),'_blank');
+});
+
+clearBtn.addEventListener('click',()=>{ if(confirm('Hapus semua data?')){ entries=[]; save(); } });
+
+const THEME_KEY='buku_kas_theme';
+function loadTheme(){
+  const t=localStorage.getItem(THEME_KEY)||(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  if(t==='dark')document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme');
+  darkToggle.checked=(t==='dark');
+}
+darkToggle.addEventListener('change',()=>{
+  const t=darkToggle.checked?'dark':'light';
+  if(t==='dark')document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem(THEME_KEY,t);
+});
+
+applyFilter.addEventListener('click',()=>render());
+
+loadTheme(); load(); dtI.addEventListener('focus',()=>{ if(!dtI.value) setNowDatetimeLocal(dtI); });
+
+// PWA Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW fail',e));
+}
+</script>
+</body>
+</html>
